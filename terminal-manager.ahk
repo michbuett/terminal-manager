@@ -101,7 +101,15 @@ SetActivePuttyTerminal(index) {
     if (WinExist("ahk_id" . activeTerminalID)) {
         WinGetPos, , currentYPos
         if (currentYPos >= 0) {
-            WinTransitY(activeTerminalID, -2000)
+            IfWinActive
+            {
+                ; toggle active and visible terminals
+                WinTransitY(activeTerminalID, -2000)
+            } else {
+                ; the terminal is visible but not active
+                ; -> focus it
+                WinActivate
+            }
         } else {
             WinTransitY(activeTerminalID, 0)
             WinActivate
