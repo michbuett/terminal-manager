@@ -20,6 +20,19 @@ IniRead, puttyPW, %A_ScriptDir%\terminal-manager.ini, Login, pw
 puttyTerminalList := Array()
 puttyActiveDlg := 0
 
+; initialize monitor dimensions
+SysGet, MonCount, MonitorCount
+MonDim := Array()
+Loop {
+    SysGet, dim, MonitorWorkArea, %A_Index%
+    MonDim.Insert({x: dimLeft, y: dimTop, width: dimRight - dimLeft, height: dimBottom - dimTop})
+} Until A_Index >= MonCount
+
+;for, key, val in MonDim {
+;    for, subkey, subval in val {
+;        MsgBox, %subkey% : %subval%
+;    }
+;}
 Return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,8 +61,10 @@ LWin & 9::SetActivePuttyTerminal(9)
     Shift & Right::Send +l
     
     ^#t::DestroyActivePuttyTerminal()
-    LWin & Left::TerminalSwitchMonitor()
-    LWin & Right::TerminalSwitchMonitor()
+    if (MonCount > 1) {
+        LWin & Left::TerminalSwitchMonitor()
+        LWin & Right::TerminalSwitchMonitor()
+    }
 #IfWinActive
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -124,17 +139,38 @@ SetActivePuttyTerminal(index) {
 TerminalSwitchMonitor() {
     global puttyTerminalList
     global puttyActiveDlg
-    
+    global MonDim
+
     activeTerminalID := puttyTerminalList[puttyActiveDlg]
+    winIdent := "ahk_id" . activeTerminalID
     if (WinExist("ahk_id" . activeTerminalID)) {
         WinGetPos, currentXPos, , currentWidth
-        ;MsgBox, pos: %currentXPos%, width: %currentWidth%
-        if (currentXPos < currentWidth) {
-            WinMove, , , currentWidth
-        } else {
-            WinMove, , , 0
+        newMon := MonDim[getNextMon(currentXPos)]
+        ;debugMonDim(newMon)
+        WinMove, , , newMon.x, newMon.y
+        ; resize terminal to the current monitor dimension (seperate step because immediate
+        ; updating position and size can sometimes get mixed up)
+        WinMove, , , , , newMon.width, newMon.height
+    }
+}
+
+getNextMon(xpos) {
+    global MonDim
+    
+    for key, val in MonDim {
+        if (xpos < val.x) {
+            return key
         }
     }
+    return 1
+}
+
+debugMonDim(mon) {
+    s := ""
+    for key, val in mon {
+        s := s . key . ": " . val . ", "
+    }
+    MsgBox, %s%
 }
 
 DestroyPuttyTerminals() {
@@ -180,6 +216,5 @@ WinTransitY(winId, targetY) {
             }
         }
     }
-    
 }
 Return
