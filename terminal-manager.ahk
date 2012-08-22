@@ -7,9 +7,11 @@
 ; Auto-Execute
 
 Menu, TRAY, NoStandard
-Menu, Tray, Icon, %A_ScriptDir%\terminal.ico
+Menu, TRAY, Icon, %A_ScriptDir%\terminal.ico
+Menu, TRAY, Add, Hide all, HideAll
+Menu, TRAY, Add, Reset, Reset
 Menu, TRAY, Add, Exit, Exit
-Menu, TRAY, Tip, Putty Terminal Manager
+Menu, TRAY, Tip, Terminal Manager
 OnExit, Exit
 
 terminals := Array()
@@ -57,10 +59,18 @@ LWin & 6::SetActiveTerminal(6)
 LWin & 7::SetActiveTerminal(7)
 LWin & 8::SetActiveTerminal(8)
 LWin & 9::SetActiveTerminal(9)
-^#t::DestroyTerminal(activeTerminal, false)
+^#t::CloseTerminal(activeTerminal, false, true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Functions/Procedures
+
+HideAll:
+    HideAllTerminals()
+Return
+
+Reset:
+    DestroyAllTerminals()
+Return
 
 Exit:
     DestroyAllTerminals()
@@ -72,7 +82,7 @@ InitTerminal(cfg) {
     user :=  cfg.user
     pw :=  cfg.user
     
-    ; open putty terminal
+    ; open terminal
     Run, %exe%, , , processId
     WinWaitActive, ahk_pid %processId%
     dlgId := WinExist("ahk_pid" . processId)
@@ -105,7 +115,7 @@ SetActiveTerminal(index) {
     activeTerminalCfg := terminals[index]
     activeTerminalID := activeTerminalCfg.terminalID
     
-    if (WinExist("ahk_id" . activeTerminalID)) {
+    if (activeTerminalID && WinExist("ahk_id" . activeTerminalID)) {
         ; the terminal alread exits
         ; -> toggle active state
             WinGetPos, , currentYPos
@@ -168,30 +178,53 @@ HideTerminal(cfg) {
 }
 
 /**
- * destroys a terminal window with the given index
+ * Closes (hides and may destroys) a terminal window with the given index
+ *
+ * @param {Number} index
+ *      the index of the terminal to close
+ *
+ * @param {Boolean} force
+ *      if set to FALSE only active terminals are closed
+ *
+ * @param {Boolean} kill
+ *      destroys the window instance if set to TRUE
  */
-DestroyTerminal(index, force) {
+CloseTerminal(index, force, kill) {
     global terminals
+    global activeTerminal
     
     activeTerminalID := terminals[index].terminalID
     if (WinExist("ahk_id" . activeTerminalID)) {
         if (force || WinActive("ahk_id" . activeTerminalID)) {
             HideTerminal(terminals[index])
-            WinKill, ahk_id %activeTerminalID%
-            puttyTerminalList[puttyActiveDlg] := false
-            puttyActiveDlg := 0
+            if (kill) {
+                WinKill, ahk_id %activeTerminalID%
+                terminals[index].terminalID := -1
+            }
+            activeTerminal := 0
         }
     }
 }
 
 /** 
- * destroys all terminal windows
+ * Hides all terminal windows
+ */
+HideAllTerminals() {
+    global terminals
+
+    Loop {
+        CloseTerminal(A_Index, true, false)
+    } Until A_Index >= 9
+}
+
+/** 
+ * Destroys all terminal windows
  */
 DestroyAllTerminals() {
     global terminals
 
     Loop {
-        DestroyTerminal(A_Index, true)
+        CloseTerminal(A_Index, true, true)
     } Until A_Index >= 9
 }
 
