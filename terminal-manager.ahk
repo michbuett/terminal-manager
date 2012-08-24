@@ -7,36 +7,40 @@
 ; Auto-Execute
 
 Menu, TRAY, NoStandard
+Menu, TRAY, Add, Show Help, Help 
+Menu, TRAY, Add
 Menu, TRAY, Icon, %A_ScriptDir%\terminal.ico
-Menu, TRAY, Add, Hide all, HideAll
-Menu, TRAY, Add, Reset, Reset
-Menu, TRAY, Add, Exit, Exit
+Menu, TRAY, Add, Hide all (Ctrl+Win+H), HideAll
+Menu, TRAY, Add, Reset (Ctrl+Win+R), Reset
+Menu, TRAY, Add
+Menu, TRAY, Add, Exit (Ctrl+Win+E), Exit
 Menu, TRAY, Tip, Terminal Manager
 OnExit, Exit
 
 terminals := Array()
 activeTerminal := 0
-config := A_ScriptDir . "\terminal-manager.ini"
+configFile := A_ScriptDir . "\terminal-manager.ini"
+helpFile := A_ScriptDir . "\README.md"
 
 ; load default configuration
-IniRead, defaultExe, %config%, Defaults, exe
-IniRead, defaultX, %config%, Defaults, x
-IniRead, defaultY, %config%, Defaults, y
-IniRead, defaultWidth, %config%, Defaults, width
-IniRead, defaultHeight, %config%, Defaults, height
-IniRead, defaultUser, %config%, Defaults, user
-IniRead, defaultPW, %config%, Defaults, pw
+IniRead, defaultExe, %configFile%, Defaults, exe
+IniRead, defaultX, %configFile%, Defaults, x
+IniRead, defaultY, %configFile%, Defaults, y
+IniRead, defaultWidth, %configFile%, Defaults, width
+IniRead, defaultHeight, %configFile%, Defaults, height
+IniRead, defaultUser, %configFile%, Defaults, user
+IniRead, defaultPW, %configFile%, Defaults, pw
 
 Loop {
     ; load session dependent configuration
     session := "Session" . A_Index
-    IniRead, currentExe, %config%, %session%, exe, %defaultExe%
-    IniRead, currentX, %config%, %session%, x, %defaultX%
-    IniRead, currentY, %config%, %session%, y, %defaultY%
-    IniRead, currentWidth, %config%, %session%, width, %defaultWidth%
-    IniRead, currentHeight, %config%, %session%, height, %defaultHeight%
-    IniRead, currentUser, %config%, %session%, user, %defaultUser%
-    IniRead, currentPW, %config%, %session%, pw, %defaultPW%
+    IniRead, currentExe, %configFile%, %session%, exe, %defaultExe%
+    IniRead, currentX, %configFile%, %session%, x, %defaultX%
+    IniRead, currentY, %configFile%, %session%, y, %defaultY%
+    IniRead, currentWidth, %configFile%, %session%, width, %defaultWidth%
+    IniRead, currentHeight, %configFile%, %session%, height, %defaultHeight%
+    IniRead, currentUser, %configFile%, %session%, user, %defaultUser%
+    IniRead, currentPW, %configFile%, %session%, pw, %defaultPW%
 
     sessionCfg := {exe: currentExe, x: currentX, y: currentY, width: currentWidth, height: currentHeight, user: currentUser, pw: currentPW}
     terminals.Insert(sessionCfg)
@@ -59,22 +63,30 @@ LWin & 6::SetActiveTerminal(6)
 LWin & 7::SetActiveTerminal(7)
 LWin & 8::SetActiveTerminal(8)
 LWin & 9::SetActiveTerminal(9)
+
+^#h::HideAllTerminals()
+^#e::Exit()
+^#r::Reset()
 ^#t::CloseTerminal(activeTerminal, false, true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Functions/Procedures
+
+Help:
+    FileRead, helpText, %helpFile%
+    MsgBox, 64, Terminal Manager Help, %helpText%
+Return
 
 HideAll:
     HideAllTerminals()
 Return
 
 Reset:
-    DestroyAllTerminals()
+    Reset()
 Return
 
 Exit:
-    DestroyAllTerminals()
-    ExitApp
+    Exit()
 Return
 
 InitTerminal(cfg) {
@@ -226,6 +238,15 @@ DestroyAllTerminals() {
     Loop {
         CloseTerminal(A_Index, true, true)
     } Until A_Index >= 9
+}
+
+Reset() {
+    DestroyAllTerminals()
+}
+
+Exit() {
+    DestroyAllTerminals()
+    ExitApp
 }
 
 
