@@ -6,17 +6,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Auto-Execute
 
-Menu, TRAY, NoStandard
-Menu, TRAY, Add, Show Help, Help 
-Menu, TRAY, Add
-Menu, TRAY, Icon, %A_ScriptDir%\terminal.ico
-Menu, TRAY, Add, Hide all (Ctrl+Win+H), HideAll
-Menu, TRAY, Add, Reset (Ctrl+Win+R), Reset
-Menu, TRAY, Add
-Menu, TRAY, Add, Exit (Ctrl+Win+E), Exit
-Menu, TRAY, Tip, Terminal Manager
-OnExit, Exit
-
+keys := Array()
 terminals := Array()
 activeTerminal := 0
 configFile := A_ScriptDir . "\terminal-manager.ini"
@@ -41,36 +31,77 @@ Loop {
     IniRead, currentHeight, %configFile%, %session%, height, %defaultHeight%
     IniRead, currentUser, %configFile%, %session%, user, %defaultUser%
     IniRead, currentPW, %configFile%, %session%, pw, %defaultPW%
-
     sessionCfg := {exe: currentExe, x: currentX, y: currentY, width: currentWidth, height: currentHeight, user: currentUser, pw: currentPW}
     terminals.Insert(sessionCfg)
-    
-    ;tmp := serializeObject(sessionCfg)
-    ;MsgBox, %tmp%
+
+    ; load keybinding to toggle terminal i
+    key := "term" . A_Index
+    hotkeyLabel := "SetActiveTerminal" . A_Index 
+    IniRead, key, %configFile%, Keys, %key%, %defaultPW%
+    Hotkey, %key%, %hotkeyLabel%
 } Until A_Index >= 9
+
+IniRead, key_HideAll, %configFile%, Keys, hideAll
+IniRead, key_KillActive, %configFile%, Keys, killActive
+IniRead, key_KillAll, %configFile%, Keys, killAll
+IniRead, key_Exit, %configFile%, Keys, exit
+
+Hotkey, %key_HideAll%, HideAll
+Hotkey, %key_KillActive%, KillActive
+Hotkey, %key_KillAll%, KillAll
+Hotkey, %key_Exit%, Exit
+
+Menu, TRAY, NoStandard
+Menu, TRAY, Add, Show Help, Help 
+Menu, TRAY, Add
+Menu, TRAY, Icon, %A_ScriptDir%\terminal.ico
+Menu, TRAY, Add, Hide all (%key_HideAll%), HideAll
+Menu, TRAY, Add, Kill all (%key_KillAll%), KillAll
+Menu, TRAY, Add
+Menu, TRAY, Add, Exit (%key_Exit%), Exit
+Menu, TRAY, Tip, Terminal Manager
+OnExit, Exit
 
 Return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Hotkeys
-
-LWin & 1::SetActiveTerminal(1)
-LWin & 2::SetActiveTerminal(2)
-LWin & 3::SetActiveTerminal(3)
-LWin & 4::SetActiveTerminal(4)
-LWin & 5::SetActiveTerminal(5)
-LWin & 6::SetActiveTerminal(6)
-LWin & 7::SetActiveTerminal(7)
-LWin & 8::SetActiveTerminal(8)
-LWin & 9::SetActiveTerminal(9)
-
-^#h::HideAllTerminals()
-^#e::Exit()
-^#r::Reset()
-^#t::CloseTerminal(activeTerminal, false, true)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Functions/Procedures
+
+SetActiveTerminal1:
+    SetActiveTerminal(1)
+Return
+
+SetActiveTerminal2:
+    SetActiveTerminal(2)
+Return
+
+SetActiveTerminal3:
+    SetActiveTerminal(3)
+Return
+
+SetActiveTerminal4:
+    SetActiveTerminal(4)
+Return
+
+SetActiveTerminal5:
+    SetActiveTerminal(5)
+Return
+
+SetActiveTerminal6:
+    SetActiveTerminal(6)
+Return
+
+SetActiveTerminal7:
+    SetActiveTerminal(7)
+Return
+
+SetActiveTerminal8:
+    SetActiveTerminal(8)
+Return
+
+SetActiveTerminal9:
+    SetActiveTerminal(9)
+Return
 
 Help:
     FileRead, helpText, %helpFile%
@@ -81,12 +112,17 @@ HideAll:
     HideAllTerminals()
 Return
 
-Reset:
-    Reset()
+KillActive:
+    CloseTerminal(activeTerminal, false, true)
+Return
+
+KillAll:
+    DestroyAllTerminals()
 Return
 
 Exit:
-    Exit()
+    DestroyAllTerminals()
+    ExitApp
 Return
 
 InitTerminal(cfg) {
@@ -238,15 +274,6 @@ DestroyAllTerminals() {
     Loop {
         CloseTerminal(A_Index, true, true)
     } Until A_Index >= 9
-}
-
-Reset() {
-    DestroyAllTerminals()
-}
-
-Exit() {
-    DestroyAllTerminals()
-    ExitApp
 }
 
 
