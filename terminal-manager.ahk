@@ -195,15 +195,18 @@ ShowTerminal(cfg) {
     SetWinDelay, 10
     
     winId := cfg.terminalID
+    targetX := cfg.x
     targetY := cfg.y
+    currentY := -2000
     
     if (WinExist("ahk_id" . winId)) {
-        WinGetPos, , currentYPos
+        WinMove, targetX, currentY
+        ;WinGetPos, , currentY
         
-        while (currentYPos < targetY) {
-            newYPos := currentYPos + 100
+        while (currentY < targetY) {
+            newYPos := currentY + 100
             WinMove, , newYPos 
-            WinGetPos, , currentYPos
+            WinGetPos, , currentY
         }
     }
 }
@@ -212,15 +215,18 @@ HideTerminal(cfg) {
     SetWinDelay, 10
     
     winId := cfg.terminalID
+    currentX := cfg.x
+    currentY := cfg.y
     targetY := -2000
     
     if (WinExist("ahk_id" . winId)) {
-        WinGetPos, , currentYPos
+        WinMove, currentX, currentY
+        ;WinGetPos, , currentY
         
-        while (currentYPos > targetY) {
-            newYPos := currentYPos - 100
+        while (currentY > targetY) {
+            newYPos := currentY - 100
             WinMove, , newYPos 
-            WinGetPos, , currentYPos
+            WinGetPos, , currentY
         }
     }
 }
@@ -247,7 +253,7 @@ CloseTerminal(index, force, kill) {
             HideTerminal(terminals[index])
             if (kill) {
                 WinKill, ahk_id %activeTerminalID%
-                terminals[index].terminalID := -1
+                terminals[index].terminalID := false
             }
             activeTerminal := 0
         }
